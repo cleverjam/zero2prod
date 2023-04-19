@@ -24,26 +24,23 @@ jobs:
 
     steps:
       - name: Check out repository code
-        uses: action/checkout@v3
+        uses: actions/checkout@v3
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Rust cache
+      - name: Rust Cache Action
         uses: Swatinem/rust-cache@v2
         with:
-          key: sqlx-${{env.SQLX_VERSION}}
+          key: sqlx-${{ env.SQLX_VERSION }}
 
-      - name: Run tests
-        run: cargo test
-
-      - name: Setup sqlx-cli
+      - name: Install sqlx-cli
         run:
           cargo install sqlx-cli
-            --version=${{SQLX_VERSION}}
-            --features ${{SQLX_FEATURES}}
-            --no-default-features
-            --locked
+          --version=${{ env.SQLX_VERSION }}
+          --features ${{ env.SQLX_FEATURES }}
+          --no-default-features
+          --locked
 
       - name: Install postgresql-client
         run: sudo apt-get update && sudo apt-get install postgresql-client -y
