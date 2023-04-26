@@ -1,10 +1,23 @@
-FROM rust:1.69 AS builder
-
+FROM lukemathwalker/cargo-chef:latest-rust-1 AS chef
 WORKDIR /app
 RUN apt update && apt install lld clang -y
+
+
+FROM chef as PLANNER
+COPY . .
+# Generate chef's "lock" file
+RUN cargo chef prepare --recipe-path recipe.json
+
+
+FROM chef AS builder
+COPY --from=planner /app/recipe.json recipe.json
+# Build deps.
+RUN cargo chef cook --release --recipe-path recipe.json
+
+# Build App
 COPY . .
 ENV SQLX_OFFLINE true
-RUN cargo build --release
+RUN cargo build --release --bin zero2prod
 
 # TODO: https://github.com/emk/rust-musl-builder
 FROM debian:bullseye-slim AS runtime
