@@ -5,7 +5,7 @@ services:
     dockerfile_path: Dockerfile
     source_dir: .
     github:
-      branch: master
+      branch: main
       deploy_on_push: true
       repo: cleverjam/zero2prod
     health_check:
