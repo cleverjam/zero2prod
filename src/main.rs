@@ -20,7 +20,7 @@ async fn main() -> std::io::Result<()> {
     let address = TcpListener::bind(addr_str)?;
     let db_pool = PgPoolOptions::new()
         .acquire_timeout(std::time::Duration::from_secs(2))
-        .connect_lazy_with(config.database.connection_string());
+        .connect_lazy_with(config.database.pg_conn_with_db());
 
     run(address, db_pool)?.await
 }

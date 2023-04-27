@@ -26,12 +26,11 @@ pub struct DatabaseSettings {
 }
 
 impl DatabaseSettings {
-    pub fn connection_string(&self) -> PgConnectOptions {
-        self.connection_string_without_db()
-            .database(&self.database_name)
+    pub fn pg_conn_with_db(&self) -> PgConnectOptions {
+        self.pg_conn_without_db().database(&self.database_name)
     }
 
-    pub fn connection_string_without_db(&self) -> PgConnectOptions {
+    pub fn pg_conn_without_db(&self) -> PgConnectOptions {
         PgConnectOptions::new()
             .host(&self.host)
             .username(&self.username)
