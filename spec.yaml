@@ -5,7 +5,7 @@ services:
     dockerfile_path: Dockerfile
     source_dir: .
     github:
-      branch: deployment
+      branch: master
       deploy_on_push: true
       repo: cleverjam/zero2prod
     health_check:
@@ -24,7 +24,7 @@ services:
         value: ${newsletter.PASSWORD}
       - key: APP_DATABASE__HOST
         scope: RUN_TIME
-        value: ${newsletter.HOST}
+        value: ${newsletter.HOSTNAME}
       - key: APP_DATABASE__PORT
         scope: RUN_TIME
         value: ${newsletter.PORT}
@@ -38,4 +38,4 @@ databases:
     name: newsletter
     num_nodes: 1
     size: db-s-dev-database
-    version: "12"
+    version: "14"

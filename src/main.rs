@@ -16,7 +16,6 @@ async fn main() -> std::io::Result<()> {
     let config = get_configuration().expect("Failed to read configuration.");
     let addr_str = format!("{}:{}", config.application.host, config.application.port);
 
-    println!("***** Server internal address {}", addr_str);
     let address = TcpListener::bind(addr_str)?;
     let db_pool = PgPoolOptions::new()
         .acquire_timeout(std::time::Duration::from_secs(2))
