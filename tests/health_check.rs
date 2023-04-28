@@ -23,6 +23,45 @@ pub struct TestApp {
     pub db_pool: PgPool,
 }
 
+async fn spawn_app() -> TestApp {
+    Lazy::force(&TRACING);
+    let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind a random port.");
+    let port = listener.local_addr().unwrap().port();
+
+    let mut config = get_configuration().expect("Failed to read configuration.");
+    config.database.database_name = Uuid::new_v4().to_string();
+    let db_pool = configure_db(&config.database).await;
+    let server = startup::run(listener, db_pool.clone()).expect("Failed to bind address.");
+    let _ = tokio::spawn(server);
+
+    TestApp {
+        address: format!("http://127.0.0.1:{port}"),
+        db_pool,
+    }
+}
+
+async fn configure_db(config: &DatabaseSettings) -> PgPool {
+    let mut db_connection = PgConnection::connect_with(&config.pg_conn_without_db())
+        .await
+        .expect("Failed to connect to Postgres");
+
+    db_connection
+        .execute(format!(r#"CREATE DATABASE "{}";"#, config.database_name).as_str())
+        .await
+        .expect("Failed to create database.");
+
+    let db_pool = PgPool::connect_with(config.pg_conn_with_db())
+        .await
+        .expect("Failed to connect to Postgres.");
+
+    sqlx::migrate!("./migrations")
+        .run(&db_pool)
+        .await
+        .expect("Failed to migrate the db.");
+
+    db_pool
+}
+
 #[tokio::test]
 async fn health_check_works() {
     let app = spawn_app().await;
@@ -96,7 +135,7 @@ async fn subscribe_returns_a_400_when_data_is_missing() {
 }
 
 #[tokio::test]
-async fn subscribe_returns_a_200_when_fields_are_present_but_empty() {
+async fn subscribe_returns_a_400_when_fields_are_present_but_empty() {
     let app = spawn_app().await;
     let client = reqwest::Client::new();
     let test_cases = vec![
@@ -105,7 +144,7 @@ async fn subscribe_returns_a_200_when_fields_are_present_but_empty() {
         ("name=dude&email=not-a-valid-email", "invalid email"),
     ];
 
-    for (body, desc) in test_cases {
+    for (body, description) in test_cases {
         let response = client
             .post(&format!("{}/subscriptions", &app.address))
             .header("Content-Type", "application/x-www-form-urlencoded")
@@ -115,49 +154,10 @@ async fn subscribe_returns_a_200_when_fields_are_present_but_empty() {
             .expect("Failed to execute request.");
 
         assert_eq!(
-            200,
+            400,
             response.status().as_u16(),
-            "The API did not return a 200 OK when the payload was {}",
-            desc
+            "The API did not return a 400 Bad Request when the payload was {}.",
+            description
         );
     }
-}
-
-async fn spawn_app() -> TestApp {
-    Lazy::force(&TRACING);
-    let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind a random port.");
-    let port = listener.local_addr().unwrap().port();
-
-    let mut config = get_configuration().expect("Failed to read configuration.");
-    config.database.database_name = Uuid::new_v4().to_string();
-    let db_pool = configure_db(&config.database).await;
-    let server = startup::run(listener, db_pool.clone()).expect("Failed to bind address.");
-    let _ = tokio::spawn(server);
-
-    TestApp {
-        address: format!("http://127.0.0.1:{port}"),
-        db_pool,
-    }
-}
-
-async fn configure_db(config: &DatabaseSettings) -> PgPool {
-    let mut db_connection = PgConnection::connect_with(&config.pg_conn_without_db())
-        .await
-        .expect("Failed to connect to Postgres");
-
-    db_connection
-        .execute(format!(r#"CREATE DATABASE "{}";"#, config.database_name).as_str())
-        .await
-        .expect("Failed to create database.");
-
-    let db_pool = PgPool::connect_with(config.pg_conn_with_db())
-        .await
-        .expect("Failed to connect to Postgres.");
-
-    sqlx::migrate!("./migrations")
-        .run(&db_pool)
-        .await
-        .expect("Failed to migrate the db.");
-
-    db_pool
 }
