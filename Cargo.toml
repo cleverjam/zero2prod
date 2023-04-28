@@ -16,7 +16,7 @@ name = "zero2prod"
 actix-web = "4"
 reqwest = "0.11.12"
 serde = { version = "1.0.145", features = ["derive"] }
-tokio = { version = "1.21.2", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 config = "0.13.3"
 uuid = { version = "1", features = ["v4"] }
 chrono = { version = "0.4.22", default-features = false, features = ["clock"] }
@@ -28,6 +28,7 @@ secrecy = { version = "0.8.0", features = ["serde"] }
 tracing-actix-web = "0.7.4"
 serde-aux = "3"
 unicode-segmentation = "1"
+claim = "0.5"
 
 
 [dependencies.sqlx]
@@ -44,4 +45,6 @@ features = [
 ]
 
 [dev-dependencies]
+claim = "0.5"
+claims = "0.7.1"
 once_cell = "1.17.1"
