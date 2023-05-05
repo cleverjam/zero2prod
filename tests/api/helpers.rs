@@ -1,12 +1,9 @@
-use std::net::TcpListener;
-
 use once_cell::sync::Lazy;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use uuid::Uuid;
 
 use zero2prod::configuration::{get_configuration, DatabaseSettings};
-use zero2prod::email_client::EmailClient;
-use zero2prod::startup;
+use zero2prod::startup::{get_connection_pool, Application};
 use zero2prod::telemetry::{get_subscriber, init_subscriber};
 
 static TRACING: Lazy<()> = Lazy::new(|| {
@@ -36,34 +33,25 @@ pub struct TestApp {
 
 pub async fn spawn_app() -> TestApp {
     Lazy::force(&TRACING);
-    let listener = TcpListener::bind("127.0.0.1:0")
-        .expect("Failed to bind a random port.");
-    let port = listener.local_addr().unwrap().port();
 
-    let mut config =
-        get_configuration().expect("Failed to read configuration.");
-    config.database.database_name = Uuid::new_v4().to_string();
+    let config = {
+        let mut c = get_configuration().expect("Failed to read configuration.");
+        c.database.database_name = Uuid::new_v4().to_string();
+        c.application.port = 0;
+        c
+    };
 
-    let sender_email = config
-        .email_client
-        .sender()
-        .expect("Invalid sender email address");
+    configure_db(&config.database).await;
+    let application = Application::build(config.clone())
+        .await
+        .expect("Failed to build application");
 
-    let timeout = config.email_client.timeout();
-    let email_client = EmailClient::new(
-        config.email_client.base_url,
-        sender_email,
-        config.email_client.authorization_token,
-        timeout,
-    );
-    let db_pool = configure_db(&config.database).await;
-    let server = startup::run(listener, db_pool.clone(), email_client)
-        .expect("Failed to bind address.");
-    let _ = tokio::spawn(server);
+    let address = format!("http://127.0.0.1:{}", application.port());
+    let _ = tokio::spawn(application.run_until_stopped());
 
     TestApp {
-        address: format!("http://127.0.0.1:{port}"),
-        db_pool,
+        address,
+        db_pool: get_connection_pool(&config.database),
     }
 }
 
