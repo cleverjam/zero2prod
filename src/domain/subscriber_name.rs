@@ -8,7 +8,8 @@ impl SubscriberName {
         let forbidden_chars = ['/', '(', ')', '"', '<', '>', '\\', '{', '}'];
         let is_empty_or_whitespace = s.trim().is_empty();
         let is_too_long = s.graphemes(true).count() > 256;
-        let contains_forbidden_chars = s.chars().any(|c| forbidden_chars.contains(&c));
+        let contains_forbidden_chars =
+            s.chars().any(|c| forbidden_chars.contains(&c));
         if is_empty_or_whitespace || is_too_long || contains_forbidden_chars {
             Err(format!("{} is not a valid subscriber name.", s))
         } else {

@@ -56,7 +56,9 @@ mod test {
     }
 
     #[quickcheck_macros::quickcheck]
-    fn parses_valid_emails_successfully(valid_email: ValidEmailFixture) -> bool {
+    fn parses_valid_emails_successfully(
+        valid_email: ValidEmailFixture,
+    ) -> bool {
         SubscriberEmail::parse(valid_email.0).is_ok()
     }
 }
