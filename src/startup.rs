@@ -2,7 +2,6 @@ use std::net::TcpListener;
 
 use actix_web::dev::Server;
 use actix_web::{web, App, HttpServer};
-use log::debug;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
 use tracing_actix_web::TracingLogger;
