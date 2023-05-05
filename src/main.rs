@@ -10,12 +10,14 @@ use zero2prod::telemetry::{get_subscriber, init_subscriber};
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
     /* Logging start */
-    let subscriber = get_subscriber("Zero2Prod".into(), "info".into(), std::io::stdout);
+    let subscriber =
+        get_subscriber("Zero2Prod".into(), "info".into(), std::io::stdout);
     init_subscriber(subscriber);
     /* Logging end */
 
     let config = get_configuration().expect("Failed to read configuration.");
-    let addr_str = format!("{}:{}", config.application.host, config.application.port);
+    let addr_str =
+        format!("{}:{}", config.application.host, config.application.port);
 
     let address = TcpListener::bind(addr_str)?;
     let db_pool = PgPoolOptions::new()
@@ -26,7 +28,14 @@ async fn main() -> std::io::Result<()> {
         .email_client
         .sender()
         .expect("Invalid sender email provided.");
-    let email_client = EmailClient::new(config.email_client.base_url, sender_email);
+
+    let timeout = config.email_client.timeout();
+    let email_client = EmailClient::new(
+        config.email_client.base_url,
+        sender_email,
+        config.email_client.authorization_token,
+        timeout,
+    );
 
     run(address, db_pool, email_client)?.await
 }
