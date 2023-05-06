@@ -35,8 +35,6 @@ pub async fn subscribe(
     db_pool: web::Data<PgPool>,
     email_client: web::Data<EmailClient>,
 ) -> HttpResponse {
-    let confirmation_link =
-        "https://some-link-to-somwhere/subscriptions/confirm";
     let new_subscriber = match form.0.try_into() {
         Ok(form) => form,
         Err(_) => return HttpResponse::BadRequest().finish(),
@@ -47,17 +45,7 @@ pub async fn subscribe(
     };
 
     // Send email.
-    if email_client
-        .send_email(
-            new_subscriber.email,
-            "Hello world!",
-            &format!(
-                "Blah blah blah blah blah blah blah blah! <br/> Click:\
-                 <a href=\"{}\">here</a> to confirm your subscription.",
-                confirmation_link
-            ),
-            &format!("Blah!\n cofirm: {}", confirmation_link),
-        )
+    if send_confirmation_email(&email_client, new_subscriber)
         .await
         .is_err()
     {
@@ -65,6 +53,32 @@ pub async fn subscribe(
     }
 
     HttpResponse::Ok().finish()
+}
+
+#[tracing::instrument(
+    name = "Send confirmation email to subscriber",
+    skip(email_client, new_subscriber)
+)]
+pub async fn send_confirmation_email(
+    email_client: &EmailClient,
+    new_subscriber: NewSubscriber,
+) -> Result<(), reqwest::Error> {
+    let confirmation_link =
+        "https://some-link-to-somwhere/subscriptions/confirm";
+    let text_body = &format!("Blah!\n confirm: {}", confirmation_link);
+    let html_body = &format!(
+        "Blah blah blah, blah blah blah blah, blah!\
+         <br/> Click: <a href=\"{}\">here</a>.",
+        confirmation_link
+    );
+    email_client
+        .send_email(
+            new_subscriber.email,
+            "Hello world!",
+            &html_body,
+            &text_body,
+        )
+        .await
 }
 
 #[tracing::instrument(
