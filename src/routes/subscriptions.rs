@@ -35,6 +35,8 @@ pub async fn subscribe(
     db_pool: web::Data<PgPool>,
     email_client: web::Data<EmailClient>,
 ) -> HttpResponse {
+    let confirmation_link =
+        "https://some-link-to-somwhere/subscriptions/confirm";
     let new_subscriber = match form.0.try_into() {
         Ok(form) => form,
         Err(_) => return HttpResponse::BadRequest().finish(),
@@ -49,8 +51,12 @@ pub async fn subscribe(
         .send_email(
             new_subscriber.email,
             "Hello world!",
-            "Blah blah blah blah blah blah blah blah!",
-            "Blah!",
+            &format!(
+                "Blah blah blah blah blah blah blah blah! <br/> Click:\
+                 <a href=\"{}\">here</a> to confirm your subscription.",
+                confirmation_link
+            ),
+            &format!("Blah!\n cofirm: {}", confirmation_link),
         )
         .await
         .is_err()
