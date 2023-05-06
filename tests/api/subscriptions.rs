@@ -76,7 +76,6 @@ async fn subscribe_sends_a_confirmation_email_for_valid_data() {
     let app = spawn_app().await;
 
     let body = "name=BoatyMcBoatFace&email=test_user%40gmail.com";
-    let response = app.post_subscriptions(body.into()).await;
 
     Mock::given(path("/email"))
         .and(method("POST"))
@@ -85,7 +84,7 @@ async fn subscribe_sends_a_confirmation_email_for_valid_data() {
         .mount(&app.email_server)
         .await;
 
-    app.post_subscriptions(body.into()).await;
+    let response = app.post_subscriptions(body.into()).await;
 
     assert_eq!(200, response.status().as_u16());
 }
