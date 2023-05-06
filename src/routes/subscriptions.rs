@@ -1,8 +1,10 @@
-use crate::domain::{NewSubscriber, SubscriberEmail, SubscriberName};
 use actix_web::{web, HttpResponse};
 use chrono::Utc;
 use sqlx::PgPool;
 use uuid::Uuid;
+
+use crate::domain::{NewSubscriber, SubscriberEmail, SubscriberName};
+use crate::email_client::EmailClient;
 
 #[derive(serde::Deserialize)]
 pub struct FormData {
@@ -21,31 +23,47 @@ impl TryFrom<FormData> for NewSubscriber {
 }
 
 #[tracing::instrument(
-    name = "Adding a new subscriber",
-    skip(form, db_pool),
-    fields(
-        subscriber_email = %form.email,
-        subscriber_name = %form.name
-    )
+name = "Adding a new subscriber",
+skip(form, db_pool, email_client),
+fields(
+subscriber_email = % form.email,
+subscriber_name = % form.name
+)
 )]
 pub async fn subscribe(
     form: web::Form<FormData>,
     db_pool: web::Data<PgPool>,
+    email_client: web::Data<EmailClient>,
 ) -> HttpResponse {
     let new_subscriber = match form.0.try_into() {
         Ok(form) => form,
         Err(_) => return HttpResponse::BadRequest().finish(),
     };
-    match insert_subscriber(&db_pool, &new_subscriber).await {
-        Ok(_) => HttpResponse::Ok().finish(),
-        // FIXME: Should it be a bad request if its duplicated?
-        Err(_) => HttpResponse::InternalServerError().finish(),
+
+    if insert_subscriber(&db_pool, &new_subscriber).await.is_err() {
+        return HttpResponse::InternalServerError().finish();
+    };
+
+    // Send email.
+    if email_client
+        .send_email(
+            new_subscriber.email,
+            "Hello world!",
+            "Blah blah blah blah blah blah blah blah!",
+            "Blah!",
+        )
+        .await
+        .is_err()
+    {
+        return HttpResponse::InternalServerError().finish();
     }
+
+    HttpResponse::Ok().finish()
 }
 
 #[tracing::instrument(
-    name = "Saving new subscriber details to DB."
-    skip(new_subscriber, db_pool)
+name = "Saving new subscriber details to DB."
+skip(new_subscriber, db_pool)
 )]
 pub async fn insert_subscriber(
     db_pool: &PgPool,
