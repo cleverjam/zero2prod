@@ -61,7 +61,7 @@ pub async fn subscribe(
         &email_client,
         new_subscriber,
         &base_url,
-        "test-token",
+        &subscription_token,
     )
     .await
     .is_err()
