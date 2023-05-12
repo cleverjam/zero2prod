@@ -99,7 +99,7 @@ pub async fn store_token(
     subscriber_id: Uuid,
 ) -> Result<(), sqlx::Error> {
     sqlx::query!(
-        r#"INSERT INTO subscription_token (subscription_token, subscriber_id)
+        r#"INSERT INTO subscription_tokens (subscription_token, subscriber_id)
         VALUES ($1,$2)"#,
         subscription_token,
         subscriber_id
