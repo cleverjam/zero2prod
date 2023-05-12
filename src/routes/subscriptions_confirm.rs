@@ -66,7 +66,7 @@ pub async fn get_subscriber_id_from_token(
     pool: &PgPool,
 ) -> Result<Option<Uuid>, sqlx::Error> {
     let result = sqlx::query!(
-        r#"SELECT subscriber_id FROM subscription_token WHERE subscription_token = $1"#,
+        r#"SELECT subscriber_id FROM subscription_tokens WHERE subscription_token = $1"#,
         subscription_token
     )
         .fetch_optional(pool)
