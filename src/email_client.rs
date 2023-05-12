@@ -1,6 +1,7 @@
-use crate::domain::SubscriberEmail;
 use reqwest::Client;
 use secrecy::{ExposeSecret, Secret};
+
+use crate::domain::SubscriberEmail;
 
 #[derive(serde::Serialize)]
 #[serde(rename_all = "PascalCase")]
@@ -66,8 +67,6 @@ impl EmailClient {
 
 #[cfg(test)]
 mod tests {
-    use crate::domain::SubscriberEmail;
-    use crate::email_client::EmailClient;
     use claims::{assert_err, assert_ok};
     use fake::faker::internet::en::SafeEmail;
     use fake::faker::lorem::en::{Paragraph, Sentence};
@@ -77,7 +76,11 @@ mod tests {
     use wiremock::Request;
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
+    use crate::domain::SubscriberEmail;
+    use crate::email_client::EmailClient;
+
     struct SendEmailBodyMatcher;
+
     impl wiremock::Match for SendEmailBodyMatcher {
         fn matches(&self, request: &Request) -> bool {
             let result: Result<serde_json::Value, _> =
