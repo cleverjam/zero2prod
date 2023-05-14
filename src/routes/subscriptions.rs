@@ -1,5 +1,3 @@
-use std::fmt::{Debug, Display, Formatter};
-
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpResponse, ResponseError};
 use anyhow::Context;
@@ -171,6 +169,7 @@ pub fn error_chain_fmt(
     Ok(())
 }
 
+/* Errors */
 pub struct StoreTokenError(sqlx::Error);
 
 impl std::error::Error for StoreTokenError {
@@ -179,14 +178,14 @@ impl std::error::Error for StoreTokenError {
     }
 }
 
-impl Debug for StoreTokenError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+impl std::fmt::Debug for StoreTokenError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         error_chain_fmt(&self, f)
     }
 }
 
-impl Display for StoreTokenError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+impl std::fmt::Display for StoreTokenError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "A database error was encountered while trying \
@@ -194,6 +193,7 @@ impl Display for StoreTokenError {
         )
     }
 }
+
 #[derive(thiserror::Error)]
 pub enum SubscribeError {
     #[error("{0}")]
